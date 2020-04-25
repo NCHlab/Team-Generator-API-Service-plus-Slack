@@ -1,0 +1,7 @@
+team_list.json
+team_list_orig.json
+orig_generate_teams.py
+output
+old
+__pycache__
+setup.py
