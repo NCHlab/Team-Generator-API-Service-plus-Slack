@@ -73,7 +73,7 @@ die-on-term = true
 
 ## Process
 
-A slash command is entered by a user which sends a post request to the API server. The API server Immediately Responds back with an EMPTY HTTP 200 Response and also starts a seperate thread to initiate the modal to appear.
+A slash command is entered by a user which sends a post request to the API server. The API server Immediately Responds back with an EMPTY HTTP 200 Response and also starts a separate thread to initiate the modal to appear.
 
 <img src="./images/slash_command.png" alt="Image showing slash command /teams" height=180 width=500>
 
@@ -85,6 +85,6 @@ As the user selects the different options, a `POST` request is to the API servic
 
 <img src="./images/modal_ex2.png" alt="Modal Example" height=430 width=450>
 
-Once the user hits the `Submit` button, a final `POST` request is sent to the API service which initiates background processing before a response is then sent to Slack. This response appears as text in the selected Slack Channel.
+Once the user hits the `Submit` button, a final `POST` request is sent to the API service which initiates background processing after which a response is then sent to Slack. This response appears as text in the selected Slack Channel.
 
 <img src="./images/slack_chat.png" alt="Image Of Slack Chat" width="404" height="330">

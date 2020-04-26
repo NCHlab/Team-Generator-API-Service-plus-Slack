@@ -3,6 +3,7 @@ from functools import wraps
 import json
 import copy
 
+
 from flask_restful import Api, Resource, reqparse
 from flask import Flask, Blueprint, request, Response
 from generic_gen_teams import App, json_local_load, split_list
@@ -10,6 +11,11 @@ from generic_gen_teams import App, json_local_load, split_list
 import requests
 import threading
 from constants import PLAYER_MODAL_OBJ, PLAYER_CHECKBOX
+
+
+from resources.getteams import GetTeams
+
+import config
 
 # from flask_restful import Api
 # from myapi.resources.add_players import AddPlayers
@@ -22,19 +28,10 @@ app = Flask(__name__)
 blueprint = Blueprint("api", __name__, url_prefix="/v1")
 api = Api(blueprint)
 app.register_blueprint(blueprint)
+# app.register_blueprint(get_teams_api)
 
-obj = App()
 
-# Require Token to use the API Web Service
-ACCESS_TOKEN = os.environ["TMG_API_TOKEN"]
-
-try:
-    SLACK_TOKEN = os.environ["SLACK_TOKEN"]
-except KeyError:
-    print("SLACK_TOKEN ENVIRONMENT VARIABLE NOT SET")
-
-list_of_teams = []
-slack_player_data = []
+config.obj = App()
 
 
 def login_required(f):
@@ -44,7 +41,7 @@ def login_required(f):
         if not Auth:
             return {"message": "Authorization Required in Header"}, 401
 
-        elif Auth[7:] != ACCESS_TOKEN:
+        elif Auth[7:] != config.ACCESS_TOKEN:
             return {"message": "UnAuthorized Access! Credentials Incorrect"}, 401
 
         return f(*args, **kwargs)
@@ -84,7 +81,7 @@ def send_slack_modal(triggerid):
         json=data,
         headers={
             "Content-Type": "application/json;charset=utf-8",
-            "Authorization": SLACK_TOKEN,
+            "Authorization": config.SLACK_TOKEN,
         },
     )
 
@@ -94,13 +91,13 @@ def send_slack_modal(triggerid):
 
 def activate_players_post_to_slack(users_selected, num_of_team, response_url):
 
-    obj.set_all_players(activate=False)
-    obj.update_mode(int(num_of_team))
+    config.obj.set_all_players(activate=False)
+    config.obj.update_mode(int(num_of_team))
 
     for player in users_selected:
-        obj.activate_player(player)
+        config.obj.activate_player(player)
 
-    user_teams = obj.get_teams()
+    user_teams = config.obj.get_teams()
     print(user_teams)
 
     for e, team in enumerate(user_teams):
@@ -128,10 +125,10 @@ class SlackData(Resource):
         return Response(status=200)
 
     def process_tg_modal_data(self, data):
-        global slack_player_data
+        # global config.slack_player_data
 
         if data["payload"]["type"] == "block_actions":
-            slack_player_data.append(data)
+            config.slack_player_data.append(data)
             # print("ADDED TO PLAYER_DATA")
         elif data["payload"]["type"] == "view_submission":
 
@@ -140,21 +137,23 @@ class SlackData(Resource):
             ]["selected_option"]["value"]
             response_url = data["payload"]["response_urls"][0]["response_url"]
 
-            # print(slack_player_data)
+            # print(config.slack_player_data)
             # print(response_url)
             # print(num_of_team)
-            # print(slack_player_data[-1]["payload"]["actions"][0]["selected_options"])
+            # print(config.slack_player_data[-1]["payload"]["actions"][0]["selected_options"])
 
             users_selected = list(
                 map(
                     lambda x: x["value"],
-                    slack_player_data[-1]["payload"]["actions"][0]["selected_options"],
+                    config.slack_player_data[-1]["payload"]["actions"][0][
+                        "selected_options"
+                    ],
                 )
             )
             # print(users_selected)
 
             # Emptying Global Object
-            slack_player_data = []
+            config.slack_player_data = []
 
             activate_players_post_to_slack(users_selected, num_of_team, response_url)
 
@@ -173,25 +172,25 @@ class SlackInitialMsg(Resource):
         return Response(status=200)
 
 
-class GetTeams(Resource):
-    # @login_required
-    def get(self):
+# class GetTeams(Resource):
+#     # @login_required
+#     def get(self):
 
-        global list_of_teams
+#         global list_of_teams
 
-        # Only Allow Authorised users to generate new team, otherwise return ucnahnged list
-        Auth = request.headers.get("Authorization", "")
-        if Auth[7:] == ACCESS_TOKEN:
-            list_of_teams = obj.get_teams()
+#         # Only Allow Authorised users to generate new team, otherwise return ucnahnged list
+#         Auth = request.headers.get("Authorization", "")
+#         if Auth[7:] == ACCESS_TOKEN:
+#             list_of_teams = config.obj.get_teams()
 
-        elif not list_of_teams:
-            list_of_teams = obj.get_teams()
+#         elif not list_of_teams:
+#             list_of_teams = config.obj.get_teams()
 
-        formatted_obj = {}
-        for e, i in enumerate(list_of_teams):
-            formatted_obj[f"TEAM {e+1}"] = i
+#         formatted_obj = {}
+#         for e, i in enumerate(list_of_teams):
+#             formatted_obj[f"TEAM {e+1}"] = i
 
-        return formatted_obj
+#         return formatted_obj
 
 
 class AddPlayers(Resource):
@@ -217,7 +216,7 @@ class AddPlayers(Resource):
 
         returned_data = []
         for player in players_list:
-            resp = obj.add_mode(player)
+            resp = config.obj.add_mode(player)
             returned_data.append(resp)
 
         players_ok = list(filter(lambda x: x["status"] == "ok", returned_data))
@@ -259,7 +258,7 @@ class DeletePlayers(Resource):
 
         returned_data = []
         for player in players_list:
-            resp = obj.delete_mode(player)
+            resp = config.obj.delete_mode(player)
             returned_data.append(resp)
 
         players_ok = list(filter(lambda x: x["status"] == "ok", returned_data))
@@ -295,7 +294,7 @@ class UpdateTeamNum(Resource):
     @login_required
     def post(self):
         args = self.reqparse.parse_args()
-        resp = obj.update_mode(args["data"])
+        resp = config.obj.update_mode(args["data"])
 
         if resp["status"] == "ok":
             response = ({"text": "Team Number Updated"}, 200)
@@ -323,7 +322,7 @@ class ActivatePlayers(Resource):
         players_list = [x.strip().title() for x in players_list]
 
         if "All" in players_list and len(players_list) == 1:
-            resp = obj.set_all_players(activate=True)
+            resp = config.obj.set_all_players(activate=True)
             if resp["status"] == "ok":
                 response = ({"text": "All Players Activated"}, 200)
             else:
@@ -332,7 +331,7 @@ class ActivatePlayers(Resource):
 
             returned_data = []
             for player in players_list:
-                resp = obj.activate_player(player)
+                resp = config.obj.activate_player(player)
                 returned_data.append(resp)
 
             if None not in returned_data and len(returned_data) == len(players_list):
@@ -378,7 +377,7 @@ class DeactivatePlayers(Resource):
         players_list = [x.strip().title() for x in players_list]
 
         if "All" in players_list and len(players_list) == 1:
-            resp = obj.set_all_players(activate=False)
+            resp = config.obj.set_all_players(activate=False)
             if resp["status"] == "ok":
                 response = ({"text": "All Players Deactivated"}, 200)
             else:
@@ -387,7 +386,7 @@ class DeactivatePlayers(Resource):
 
             returned_data = []
             for player in players_list:
-                resp = obj.deactivate_player(player)
+                resp = config.obj.deactivate_player(player)
                 returned_data.append(resp)
 
             if None not in returned_data and len(returned_data) == len(players_list):
@@ -434,7 +433,7 @@ class AddToBalance(Resource):
 
         returned_data = []
         for player in players_list:
-            resp = obj.add_to_balance(player)
+            resp = config.obj.add_to_balance(player)
             returned_data.append(resp)
 
         players_ok = list(
@@ -483,7 +482,7 @@ class DeleteFromBalance(Resource):
 
         returned_data = []
         for player in players_list:
-            resp = obj.delete_from_balance(player)
+            resp = config.obj.delete_from_balance(player)
             returned_data.append(resp)
 
         players_ok = list(filter(lambda x: x["status"] == "ok", returned_data))
