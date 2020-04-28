@@ -2,7 +2,9 @@ from flask_restful import Resource, reqparse
 from flask import request
 from threading import Lock
 import config
+import logging
 
+logger = logging.getLogger(__name__)
 mutex = Lock()
 list_of_teams = []
 
@@ -17,10 +19,14 @@ class GetTeams(Resource):
 
         # Only Allow Authorised users to generate new team, otherwise return unchanged list
         if Auth[7:] == config.ACCESS_TOKEN:
+            logger.info("Authorized user, generating teams")
             list_of_teams = config.obj.get_teams()
 
         elif not list_of_teams:
+            logger.info("Unauthorized user, generating teams first time")
             list_of_teams = config.obj.get_teams()
+        else:
+            logger.info("Unauthorized user, retrieving cached data")
 
         mutex.release()
 

@@ -1,9 +1,12 @@
 from flask_restful import Resource, reqparse
 from threading import Lock
+import ast
+import logging
 
 from config import login_required
 import config
 
+logger = logging.getLogger(__name__)
 mutex = Lock()
 
 
@@ -23,8 +26,16 @@ class AddPlayers(Resource):
     def post(self):
 
         args = self.reqparse.parse_args()
-        players_list = args["data"].split(",")
-        players_list = [x.strip().title() for x in players_list]
+
+        try:
+            players_data = ast.literal_eval(args["data"])
+            if isinstance(players_data, list):
+                players_list = [x.strip().title() for x in players_data]
+            logger.warning(f"Received str repr of a list of player data {args['data']}")
+        except:
+            logger.info(f"Processing datatype: {type(args['data'])}")
+            players_list = args["data"].split(",")
+            players_list = [x.strip().title() for x in players_list]
 
         mutex.acquire()
 
@@ -34,6 +45,7 @@ class AddPlayers(Resource):
             returned_data.append(resp)
 
         mutex.release()
+        logger.info(f"Returned Data: {returned_data}")
 
         players_ok = list(filter(lambda x: x["status"] == "ok", returned_data))
 

@@ -2,6 +2,7 @@ import copy
 import threading
 from threading import Lock
 import requests
+import logging
 
 from flask_restful import Resource, reqparse
 from flask import Flask, Blueprint, request, Response
@@ -12,6 +13,7 @@ import config
 from generic_gen_teams import json_local_load
 from constants import PLAYER_MODAL_OBJ, PLAYER_CHECKBOX
 
+logger = logging.getLogger(__name__)
 mutex = Lock()
 
 
@@ -20,6 +22,8 @@ class SlackInitialMsg(Resource):
         data = dict(request.form)
 
         triggerid = data["trigger_id"]
+
+        logger.info(f"Req from slack to trigger modal, ID: {triggerid}")
 
         # Start a different thread to process the post request for modal
         thread = threading.Thread(target=send_slack_modal, args=(triggerid,))
@@ -47,7 +51,7 @@ def create_slack_modal(triggerid):
 
     PLAYER_MODAL_OBJ["view"]["blocks"][5]["accessory"]["options"] = option_list
 
-    # print(PLAYER_MODAL_OBJ)
+    logger.debug(f"Object Created: {PLAYER_MODAL_OBJ}")
 
     return PLAYER_MODAL_OBJ
 
@@ -55,6 +59,8 @@ def create_slack_modal(triggerid):
 def send_slack_modal(triggerid):
 
     data = create_slack_modal(triggerid)
+
+    logger.info("Sending Modal to Slack")
 
     res = requests.post(
         "https://slack.com/api/views.open",
@@ -64,6 +70,5 @@ def send_slack_modal(triggerid):
             "Authorization": config.SLACK_TOKEN,
         },
     )
-
-    # resp = res.json()
-    # print(resp)
+    resp = res.json()
+    logger.debug(f"Slack Response: {resp}")

@@ -1,5 +1,7 @@
 from flask_restful import Api
 from flask import Flask, Blueprint
+import sys
+import logging
 
 from generic_gen_teams import App
 import config
@@ -25,6 +27,21 @@ app.register_blueprint(blueprint)
 config.obj = App()
 
 
+def setup_logger():
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.INFO)
+
+    ch = logging.StreamHandler(sys.stderr)
+    formatter = logging.Formatter(
+        "%(asctime)s [%(levelname)s] (%(name)s) - %(message)s"
+    )
+    ch.setFormatter(formatter)
+    root_logger.addHandler(ch)
+
+
+setup_logger()
+logger = logging.getLogger("Flask_Web_Service")
+
 api.add_resource(GetTeams, "/get_teams")
 api.add_resource(AddPlayers, "/add")
 api.add_resource(DeletePlayers, "/delete")
@@ -36,7 +53,7 @@ api.add_resource(DeleteFromBalance, "/delete_b")
 api.add_resource(SlackData, "/slack")
 api.add_resource(SlackInitialMsg, "/mainmodal")
 
-# api.add_resource(Baz, '/Baz', '/Baz/<string:id>')
+logger.info(f"Endpoints Added {api.endpoints}")
 
 if __name__ == "__main__":
     app.run(debug=True)
