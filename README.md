@@ -1,6 +1,6 @@
 # Flask Web Service
 
-The Team Generator App has been deconstructed, removing GUI related logic from the business Logic.
+This repo consists of the Team Generator GUI App which has been deconstructed, removing GUI related logic from the business Logic and converted into a REST API.
 
 Endpoints exist which perform the requested operation.
 
@@ -14,6 +14,10 @@ export TMG_API_TOKEN={xyz}
 set TMG_API_TOKEN={xyz}
 ```
 
+> A base URL of `/v1/` has been added, thus `/get_teams` is `/v1/get_teams`
+
+`/get_teams` generates the list of teams and does not regenerate unless an authenticated GET request is made.
+
 | EndPoint            | Method | Accepts                                        | Example                                                     |
 | ------------------- | ------ | ---------------------------------------------- | ----------------------------------------------------------- |
 | /get_teams          | GET    |                                                | N/A                                                         |
@@ -26,6 +30,26 @@ set TMG_API_TOKEN={xyz}
 | /delete_b           | DELETE | \<string of users seperated by comma>          | `{"data":"Player1.Name, Player2.Name"}`                     |
 
 > `/add_b` & `/delete_b` > add / delete from balance list respectively
+
+```bash
+# Example GET - No Authorisation - Same list retrieved every time
+curl -X GET \
+  http://localhost:5000/v1/get_teams \
+  -H 'Content-Type: application/json'
+
+# Example GET - With Authorisation - New list generated each time
+curl -X GET \
+  http://localhost:5000/v1/get_teams \
+  -H 'Authorization: Bearer TOKEN_GOES_HERE' \
+  -H 'Content-Type: application/json'
+
+# Example POST
+curl -X POST \
+  http://localhost:5000/v1/add \
+  -H 'Authorization: Bearer TOKEN_GOES_HERE' \
+  -H 'Content-Type: application/json' \
+  -d '{"data":"New.Player"}'
+```
 
 # Slack
 
