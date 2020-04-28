@@ -1,6 +1,6 @@
 # Flask Web Service
 
-The Team Generator App has been deconstructed, removing GUI related logic from the business Logic.
+This repo consists of the Team Generator GUI App which has been deconstructed, removing GUI related logic from the business Logic and converted into a REST API.
 
 Endpoints exist which perform the requested operation.
 
@@ -14,6 +14,10 @@ export TMG_API_TOKEN={xyz}
 set TMG_API_TOKEN={xyz}
 ```
 
+> A base URL of `/v1/` has been added, thus `/get_teams` is `/v1/get_teams`
+
+`/get_teams` generates the list of teams and does not regenerate unless an authenticated GET request is made.
+
 | EndPoint            | Method | Accepts                                        | Example                                                     |
 | ------------------- | ------ | ---------------------------------------------- | ----------------------------------------------------------- |
 | /get_teams          | GET    |                                                | N/A                                                         |
@@ -26,6 +30,26 @@ set TMG_API_TOKEN={xyz}
 | /delete_b           | DELETE | \<string of users seperated by comma>          | `{"data":"Player1.Name, Player2.Name"}`                     |
 
 > `/add_b` & `/delete_b` > add / delete from balance list respectively
+
+```bash
+# Example GET - No Authorisation - Same list retrieved every time
+curl -X GET \
+  http://localhost:5000/v1/get_teams \
+  -H 'Content-Type: application/json'
+
+# Example GET - With Authorisation - New list generated each time
+curl -X GET \
+  http://localhost:5000/v1/get_teams \
+  -H 'Authorization: Bearer TOKEN_GOES_HERE' \
+  -H 'Content-Type: application/json'
+
+# Example POST
+curl -X POST \
+  http://localhost:5000/v1/add \
+  -H 'Authorization: Bearer TOKEN_GOES_HERE' \
+  -H 'Content-Type: application/json' \
+  -d '{"data":"New.Player"}'
+```
 
 # Slack
 
@@ -73,7 +97,7 @@ die-on-term = true
 
 ## Process
 
-A slash command is entered by a user which sends a post request to the API server. The API server Immediately Responds back with an EMPTY HTTP 200 Response and also starts a seperate thread to initiate the modal to appear.
+A slash command is entered by a user which sends a post request to the API server. The API server Immediately Responds back with an EMPTY HTTP 200 Response and also starts a separate thread to initiate the modal to appear.
 
 <img src="./images/slash_command.png" alt="Image showing slash command /teams" height=180 width=500>
 
@@ -85,6 +109,6 @@ As the user selects the different options, a `POST` request is to the API servic
 
 <img src="./images/modal_ex2.png" alt="Modal Example" height=430 width=450>
 
-Once the user hits the `Submit` button, a final `POST` request is sent to the API service which initiates background processing before a response is then sent to Slack. This response appears as text in the selected Slack Channel.
+Once the user hits the `Submit` button, a final `POST` request is sent to the API service which initiates background processing after which a response is then sent to Slack. This response appears as text in the selected Slack Channel.
 
 <img src="./images/slack_chat.png" alt="Image Of Slack Chat" width="404" height="330">
