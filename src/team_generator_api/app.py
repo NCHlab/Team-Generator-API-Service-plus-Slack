@@ -17,6 +17,8 @@ from resources.delete_from_balance import DeleteFromBalance
 
 from slack_resources.tmg_modal import SlackInitialMsg
 from slack_resources.process_slack_data import SlackData
+from slack_resources.slack_add_players import SlackAddPlayer
+
 
 app = Flask(__name__)
 
@@ -29,7 +31,7 @@ config.obj = App()
 
 def setup_logger():
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.INFO)
+    root_logger.setLevel(logging.WARNING)
 
     ch = logging.StreamHandler(sys.stderr)
     formatter = logging.Formatter(
@@ -50,8 +52,10 @@ api.add_resource(ActivatePlayers, "/activate")
 api.add_resource(DeactivatePlayers, "/deactivate")
 api.add_resource(AddToBalance, "/add_b")
 api.add_resource(DeleteFromBalance, "/delete_b")
+
 api.add_resource(SlackData, "/slack")
 api.add_resource(SlackInitialMsg, "/mainmodal")
+api.add_resource(SlackAddPlayer, "/slack/add")
 
 logger.info(f"Endpoints Added {api.endpoints}")
 
