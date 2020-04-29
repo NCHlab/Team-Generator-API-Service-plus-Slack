@@ -13,14 +13,14 @@ logger = logging.getLogger(__name__)
 mutex = Lock()
 
 
-class SlackAddPlayer(Resource):
+class SlackDeletePlayer(Resource):
     def post(self):
         data = dict(request.form)
 
         response_url = data["response_url"]
         players_text = data["text"]
 
-        logger.info(f"Req from slack to add players, Names: {players_text}")
+        logger.info(f"Req from slack to delete players, Names: {players_text}")
 
         # # Start a different thread to process the post request for response
         thread = threading.Thread(
@@ -42,7 +42,7 @@ def process_players(response_url, players_text):
 
     returned_data = []
     for player in players_list:
-        resp = config.obj.add_mode(player)
+        resp = config.obj.delete_mode(player)
         returned_data.append(resp)
 
     mutex.release()
@@ -53,7 +53,7 @@ def process_players(response_url, players_text):
         players_ok = list(map(lambda x: x["name"], players_ok))
 
         post_slack_data(
-            response_url, {"text": f"Players Added: {', '.join(players_ok)}"}
+            response_url, {"text": f"Players Deleted: {', '.join(players_ok)}"}
         )
     else:
         players_error = list(filter(lambda x: x["status"] == "error", returned_data))
@@ -61,7 +61,7 @@ def process_players(response_url, players_text):
 
         post_slack_data(
             response_url,
-            {"text": f"Following players already exist: {', '.join(players_error)}"},
+            {"text": f"Following players don't exist: {', '.join(players_error)}"},
         )
 
 

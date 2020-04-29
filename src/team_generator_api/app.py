@@ -18,6 +18,9 @@ from resources.delete_from_balance import DeleteFromBalance
 from slack_resources.tmg_modal import SlackInitialMsg
 from slack_resources.process_slack_data import SlackData
 from slack_resources.slack_add_players import SlackAddPlayer
+from slack_resources.slack_delete_players import SlackDeletePlayer
+from slack_resources.slack_add_to_balance import SlackAddToBalance
+from slack_resources.slack_delete_from_balance import SlackDeleteFromBalance
 
 
 app = Flask(__name__)
@@ -56,6 +59,9 @@ api.add_resource(DeleteFromBalance, "/delete_b")
 api.add_resource(SlackData, "/slack")
 api.add_resource(SlackInitialMsg, "/mainmodal")
 api.add_resource(SlackAddPlayer, "/slack/add")
+api.add_resource(SlackDeletePlayer, "/slack/delete")
+api.add_resource(SlackAddToBalance, "/slack/add_b")
+api.add_resource(SlackDeleteFromBalance, "/slack/delete_b")
 
 logger.info(f"Endpoints Added {api.endpoints}")
 

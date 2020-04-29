@@ -9,7 +9,6 @@ import logging
 from flask_restful import Resource, reqparse
 from flask import Flask, Blueprint, request, Response
 
-from config import login_required
 import config
 
 logger = logging.getLogger(__name__)

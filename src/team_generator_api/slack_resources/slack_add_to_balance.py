@@ -13,22 +13,20 @@ logger = logging.getLogger(__name__)
 mutex = Lock()
 
 
-class SlackAddPlayer(Resource):
+class SlackAddToBalance(Resource):
     def post(self):
         data = dict(request.form)
 
         response_url = data["response_url"]
         players_text = data["text"]
 
-        logger.info(f"Req from slack to add players, Names: {players_text}")
+        logger.info(f"Req from slack to add to balance, Names: {players_text}")
 
-        # # Start a different thread to process the post request for response
         thread = threading.Thread(
             target=process_players, args=(response_url, players_text)
         )
         thread.start()
 
-        # Immediately send back empty HTTP 200 response
         return Response(status=200)
 
 
@@ -42,18 +40,20 @@ def process_players(response_url, players_text):
 
     returned_data = []
     for player in players_list:
-        resp = config.obj.add_mode(player)
+        resp = config.obj.add_to_balance(player)
         returned_data.append(resp)
 
     mutex.release()
 
-    players_ok = list(filter(lambda x: x["status"] == "ok", returned_data))
+    players_ok = list(
+        filter(lambda x: x["status"] == "ok" or x["status"] == "ok_2", returned_data)
+    )
 
     if len(returned_data) == len(players_ok):
         players_ok = list(map(lambda x: x["name"], players_ok))
 
         post_slack_data(
-            response_url, {"text": f"Players Added: {', '.join(players_ok)}"}
+            response_url, {"text": f"Players Added to Balance: {', '.join(players_ok)}"}
         )
     else:
         players_error = list(filter(lambda x: x["status"] == "error", returned_data))
@@ -61,7 +61,7 @@ def process_players(response_url, players_text):
 
         post_slack_data(
             response_url,
-            {"text": f"Following players already exist: {', '.join(players_error)}"},
+            {"text": f"Following players do not exist: {', '.join(players_error)}"},
         )
 
 
