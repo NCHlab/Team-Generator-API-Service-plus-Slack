@@ -5,11 +5,12 @@ from threading import Lock
 import requests
 import json
 import logging
+import random
 
 from flask_restful import Resource, reqparse
 from flask import Flask, Blueprint, request, Response
 
-from config import login_required
+from constants import REPLY_BLOCK, REPLY_TEXT, DIVIDER
 import config
 
 logger = logging.getLogger(__name__)
@@ -76,14 +77,24 @@ def activate_players_post_to_slack(users_selected, num_of_team, response_url):
     
     logger.debug(f"Team Data: {user_teams}")
 
-    for e, team in enumerate(user_teams):
+    emojis = [":smile:", ":joy:", ":cry:", ":unamused:", ":rolling_on_the_floor_laughing:", ":boom:", ":skull:", ":sob:", ":exploding_head:"]
 
-        resp = requests.post(
-            response_url,
-            json={
-                "response_type": "in_channel",
-                "text": f"TEAM {e+1}\n" + "\n".join(team),
-            },
-            headers={"Content-Type": "application/json;charset=utf-8"},
-        )
-        logger.debug(f"Status Code: {resp.status_code}, Text: {resp.text}")
+    text_block = []
+
+    for e, team in enumerate(user_teams):
+        newdict = copy.deepcopy(REPLY_TEXT)
+        newdict["text"]["text"] = f"*TEAM {e+1}* {random.choice(emojis)}\n" + "\n".join(team)
+        text_block.append(newdict)
+        text_block.append(DIVIDER)
+
+    main_block = copy.deepcopy(REPLY_BLOCK)
+
+    main_block["blocks"] = text_block
+    main_block["response_type"] = "in_channel"
+
+    resp = requests.post(
+        response_url,
+        json=main_block,
+        headers={"Content-Type": "application/json;charset=utf-8"},
+    )
+    logger.debug(f"Status Code: {resp.status_code}, Text: {resp.text}")

@@ -83,3 +83,10 @@ PLAYER_CHECKBOX = {
     "text": {"type": "plain_text", "text": ""},
     "value": "",
 }
+
+
+REPLY_BLOCK = {"blocks": []}
+
+REPLY_TEXT = {"type": "section", "text": {"type": "mrkdwn", "text": ""}}
+
+DIVIDER = {"type": "divider"}
