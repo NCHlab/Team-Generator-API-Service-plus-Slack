@@ -1,18 +1,15 @@
 import threading
-from threading import Lock
-import requests
 import logging
-import copy
 
 from flask_restful import Resource, reqparse
 from flask import Flask, request, Response
 
-from constants import REPLY_BLOCK, REPLY_TEXT, DIVIDER
+from config import post_slack_data, parse_player, format_user
 import config
 
 
 logger = logging.getLogger(__name__)
-mutex = Lock()
+mutex = threading.Lock()
 
 
 class SlackDeleteFromBalance(Resource):
@@ -21,70 +18,58 @@ class SlackDeleteFromBalance(Resource):
 
         response_url = data["response_url"]
         players_text = data["text"]
+        user_data = format_user(data)
 
         logger.info(f"Req from slack to delete from balance, Names: {players_text}")
+        logger.info(user_data)
 
         thread = threading.Thread(
-            target=process_players, args=(response_url, players_text)
+            target=process_data, args=(response_url, players_text)
         )
         thread.start()
 
         return Response(status=200)
 
 
-def process_players(response_url, players_text):
+def process_data(response_url, players_text):
 
-    players_list = players_text.split(",")
-    players_list = [x.strip().title() for x in players_list]
-    players_list = list(filter(None, players_list))
+    players_list = parse_player(players_text)
+    player_status = process_players(players_list)
+    positive_result, player_names = process_output(player_status)
+    player_names = ", ".join(player_names)
+
+    if positive_result:
+        post_slack_data(response_url, "Players removed from balance", player_names)
+    else:
+        post_slack_data(
+            response_url, "Following players don't exist in balance list", player_names
+        )
+
+
+def process_players(players_list):
 
     mutex.acquire()
 
-    returned_data = []
+    player_status = []
     for player in players_list:
         resp = config.obj.delete_from_balance(player)
-        returned_data.append(resp)
+        player_status.append(resp)
 
     mutex.release()
 
-    players_ok = list(filter(lambda x: x["status"] == "ok", returned_data))
+    return player_status
 
-    if len(returned_data) == len(players_ok):
+
+def process_output(player_status):
+
+    players_ok = list(filter(lambda x: x["status"] == "ok", player_status))
+
+    if len(player_status) == len(players_ok):
         players_ok = list(map(lambda x: x["name"], players_ok))
 
-        post_slack_data(
-            response_url, "Players Removed from Balance", ", ".join(players_ok)
-        )
+        return (True, players_ok)
     else:
-        players_error = list(filter(lambda x: x["status"] == "error", returned_data))
+        players_error = list(filter(lambda x: x["status"] == "error", player_status))
         players_error = list(map(lambda x: x["name"], players_error))
 
-        post_slack_data(
-            response_url,
-            "Following Players don't exist in balance list",
-            ", ".join(players_error),
-        )
-
-
-def post_slack_data(response_url, text, players):
-
-    text_to_show = copy.deepcopy(REPLY_TEXT)
-    text_to_show["text"]["text"] = f"*{text}* \n {players}"
-
-    main_block = copy.deepcopy(REPLY_BLOCK)
-
-    main_block["blocks"].append(text_to_show)
-    main_block["blocks"].append(DIVIDER)
-    main_block["response_type"] = "ephemereal"
-
-    resp = requests.post(
-        response_url,
-        json=main_block,
-        headers={
-            "Content-Type": "application/json;charset=utf-8",
-            "Authorization": config.SLACK_TOKEN,
-        },
-    )
-
-    logger.debug(f"Data posted to Slack: {main_block}")
-    logger.debug(f"Status Code: {resp.status_code}, Text: {resp.text}")
+        return (False, players_error)

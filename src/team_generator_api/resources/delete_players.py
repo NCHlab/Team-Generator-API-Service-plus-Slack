@@ -32,7 +32,7 @@ class DeletePlayers(Resource):
                 players_list = [x.strip().title() for x in players_data]
             logger.warning(f"Received str repr of a list of player data {args['data']}")
         except:
-            logger.info(f"Processing datatype: {type(args['data'])}")
+            logger.debug(f"Processing datatype: {type(args['data'])}")
             players_list = args["data"].split(",")
             players_list = [x.strip().title() for x in players_list]
 
@@ -44,7 +44,7 @@ class DeletePlayers(Resource):
             returned_data.append(resp)
 
         mutex.release()
-        logger.info(f"Returned Data: {returned_data}")
+        logger.debug(f"Returned Data: {returned_data}")
 
         players_ok = list(filter(lambda x: x["status"] == "ok", returned_data))
 
