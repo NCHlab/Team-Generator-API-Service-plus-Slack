@@ -111,7 +111,7 @@ As the user selects the different options, a `POST` request is to the API servic
 
 Once the user hits the `Submit` button, a final `POST` request is sent to the API service which initiates background processing after which a response is then sent to Slack. This response appears as text in the selected Slack Channel.
 
-<img src="./images/slack_chat.png" alt="Image Of Slack Chat" width="404" height="330">
+<img src="./images/slack_chat.png" alt="Image Of Slack Chat" width="250" height="350">
 
 ## Slash Commands
 
@@ -121,7 +121,7 @@ For this example the `/teams` command as seen above was used along with the foll
 
 <img src="./images/slash_command_ex2.png" alt="Image Of Slack Chat" width="480" height="250">
 
-These commands correspond to the following endpoints (setup your own command to these endpoints):
+These commands correspond to the following endpoints (setup your own command to these endpoints) :
 
 | Slash Command          | Endpoint          | Type |
 | ---------------------- | ----------------- | ---- |
@@ -130,3 +130,7 @@ These commands correspond to the following endpoints (setup your own command to 
 | /tmg_delete            | `/slack/delete`   | POST |
 | /tmg_addtobalance      | `/slack/add_b`    | POST |
 | /tmg_deletefrombalance | `/slack/delete_b` | POST |
+
+The last 4 commands are sent as type `ephemeral`, therefore they are only visible to the person who ran the command and is removed upon reload.
+
+<img src="./images/slack_chat_ex2.png" alt="Image Of Slack Chat">
