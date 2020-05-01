@@ -22,8 +22,10 @@ class SlackInitialMsg(Resource):
         data = dict(request.form)
 
         triggerid = data["trigger_id"]
+        user_data = f"User: [{data['user_id']},{data['user_name']}]"
 
         logger.info(f"Req from slack to trigger modal, ID: {triggerid}")
+        logger.info(user_data)
 
         # Start a different thread to process the post request for modal
         thread = threading.Thread(target=send_slack_modal, args=(triggerid,))

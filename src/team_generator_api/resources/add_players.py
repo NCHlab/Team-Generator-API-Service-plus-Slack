@@ -3,7 +3,7 @@ from threading import Lock
 import ast
 import logging
 
-from config import login_required
+from config import login_required, parse_player
 import config
 
 logger = logging.getLogger(__name__)
@@ -17,7 +17,7 @@ class AddPlayers(Resource):
             "data",
             type=str,
             required=True,
-            help="player/s to add was not provided <players separated by a comma>",
+            help="player/s to add was not provided <players separated by a comma>, send data with content type json",
             location="json",
         )
         super(AddPlayers, self).__init__()
@@ -30,36 +30,44 @@ class AddPlayers(Resource):
         try:
             players_data = ast.literal_eval(args["data"])
             if isinstance(players_data, list):
-                players_list = [x.strip().title() for x in players_data]
+                players_list = [player.strip().title() for player in players_data]
             logger.warning(f"Received str repr of a list of player data {args['data']}")
         except:
-            logger.info(f"Processing datatype: {type(args['data'])}")
-            players_list = args["data"].split(",")
-            players_list = [x.strip().title() for x in players_list]
+            logger.debug(f"Processing datatype: {type(args['data'])}")
+            players_list = parse_player(args["data"])
 
-        mutex.acquire()
-
-        returned_data = []
-        for player in players_list:
-            resp = config.obj.add_mode(player)
-            returned_data.append(resp)
-
-        mutex.release()
-        logger.info(f"Returned Data: {returned_data}")
-
-        players_ok = list(filter(lambda x: x["status"] == "ok", returned_data))
-
-        if len(returned_data) == len(players_ok):
-            players_ok = list(map(lambda x: x["name"], players_ok))
-            response = ({"text": f"Users Added: {', '.join(players_ok)}"}, 201)
-        else:
-            players_error = list(
-                filter(lambda x: x["status"] == "error", returned_data)
-            )
-            players_error = list(map(lambda x: x["name"], players_error))
-            response = (
-                {"text": f"Players already Exist: {', '.join(players_error)}"},
-                409,
-            )
+        player_status = add_player(players_list)
+        response = process_output(player_status)
 
         return response
+
+
+def add_player(players_list):
+
+    mutex.acquire()
+    player_status = []
+    for player in players_list:
+        resp = config.obj.add_mode(player)
+        player_status.append(resp)
+
+    mutex.release()
+    logger.debug(f"Returned Data: {player_status}")
+
+    return player_status
+
+
+def process_output(player_status):
+    players_ok = list(filter(lambda x: x["status"] == "ok", player_status))
+
+    if len(player_status) == len(players_ok):
+        players_ok = list(map(lambda x: x["name"], players_ok))
+        response = ({"text": f"Users Added: {', '.join(players_ok)}"}, 201)
+    else:
+        players_error = list(filter(lambda x: x["status"] == "error", player_status))
+        players_error = list(map(lambda x: x["name"], players_error))
+        response = (
+            {"text": f"Players already Exist: {', '.join(players_error)}"},
+            409,
+        )
+
+    return response

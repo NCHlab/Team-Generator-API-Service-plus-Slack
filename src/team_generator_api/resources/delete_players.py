@@ -3,7 +3,7 @@ from threading import Lock
 import ast
 import logging
 
-from config import login_required
+from config import login_required, parse_player
 import config
 
 logger = logging.getLogger(__name__)
@@ -32,33 +32,42 @@ class DeletePlayers(Resource):
                 players_list = [x.strip().title() for x in players_data]
             logger.warning(f"Received str repr of a list of player data {args['data']}")
         except:
-            logger.info(f"Processing datatype: {type(args['data'])}")
-            players_list = args["data"].split(",")
-            players_list = [x.strip().title() for x in players_list]
+            logger.debug(f"Processing datatype: {type(args['data'])}")
+            players_list = parse_player(args["data"])
 
-        mutex.acquire()
-
-        returned_data = []
-        for player in players_list:
-            resp = config.obj.delete_mode(player)
-            returned_data.append(resp)
-
-        mutex.release()
-        logger.info(f"Returned Data: {returned_data}")
-
-        players_ok = list(filter(lambda x: x["status"] == "ok", returned_data))
-
-        if len(returned_data) == len(players_ok):
-            players_ok = list(map(lambda x: x["name"], players_ok))
-            response = ({"text": f"Users Deleted: {', '.join(players_ok)}"}, 200)
-        else:
-            players_error = list(
-                filter(lambda x: x["status"] == "error", returned_data)
-            )
-            players_error = list(map(lambda x: x["name"], players_error))
-            response = (
-                {"text": f"Players don't exist: {', '.join(players_error)}"},
-                404,
-            )
+        player_status = delete_player(players_list)
+        response = process_output(player_status)
 
         return response
+
+
+def delete_player(players_list):
+
+    mutex.acquire()
+
+    player_status = []
+    for player in players_list:
+        resp = config.obj.delete_mode(player)
+        player_status.append(resp)
+
+    mutex.release()
+    logger.debug(f"Returned Data: {player_status}")
+
+    return player_status
+
+
+def process_output(player_status):
+    players_ok = list(filter(lambda x: x["status"] == "ok", player_status))
+
+    if len(player_status) == len(players_ok):
+        players_ok = list(map(lambda x: x["name"], players_ok))
+        response = ({"text": f"Users Deleted: {', '.join(players_ok)}"}, 200)
+    else:
+        players_error = list(filter(lambda x: x["status"] == "error", player_status))
+        players_error = list(map(lambda x: x["name"], players_error))
+        response = (
+            {"text": f"Players don't exist: {', '.join(players_error)}"},
+            404,
+        )
+
+    return response

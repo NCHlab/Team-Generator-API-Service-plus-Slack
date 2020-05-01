@@ -34,7 +34,7 @@ config.obj = App()
 
 def setup_logger():
     root_logger = logging.getLogger()
-    root_logger.setLevel(logging.WARNING)
+    root_logger.setLevel(logging.INFO)
 
     ch = logging.StreamHandler(sys.stderr)
     formatter = logging.Formatter(
