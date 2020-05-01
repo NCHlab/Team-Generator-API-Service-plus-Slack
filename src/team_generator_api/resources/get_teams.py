@@ -12,29 +12,42 @@ list_of_teams = []
 class GetTeams(Resource):
     def get(self):
 
-        global list_of_teams
-
         Auth = request.headers.get("Authorization", "")
-        mutex.acquire()
+        list_of_teams = gen_teams(Auth)
+        formatted_obj = format_obj(list_of_teams)
 
-        # Only Allow Authorised users to generate new team, otherwise return unchanged list
-        if Auth[7:] == config.ACCESS_TOKEN:
-            logger.info("Authorized user, generating teams")
-            list_of_teams = config.obj.get_teams()
+        return formatted_obj, 200
 
-        elif not list_of_teams:
-            logger.info("Unauthorized user, generating teams first time")
-            list_of_teams = config.obj.get_teams()
-        else:
-            logger.info("Unauthorized user, retrieving cached data")
 
-        mutex.release()
+def gen_teams(Auth):
 
-        formatted_obj = {}
-        for e, i in enumerate(list_of_teams):
-            formatted_obj[f"TEAM {e+1}"] = i
+    global list_of_teams
 
-        return formatted_obj
+    mutex.acquire()
+
+    # Only Allow Authorised users to generate new team, otherwise return unchanged list
+    if Auth[7:] == config.ACCESS_TOKEN:
+        logger.info("Authorized user, generating teams")
+        list_of_teams = config.obj.get_teams()
+
+    elif not list_of_teams:
+        logger.info("Unauthorized user, generating teams first time")
+        list_of_teams = config.obj.get_teams()
+    else:
+        logger.info("Unauthorized user, retrieving cached data")
+
+    mutex.release()
+
+    return list_of_teams
+
+
+def format_obj(list_of_teams):
+
+    formatted_obj = {}
+    for num, name in enumerate(list_of_teams):
+        formatted_obj[f"TEAM {num+1}"] = name
+
+    return formatted_obj
 
 
 if __name__ == "__main__":
