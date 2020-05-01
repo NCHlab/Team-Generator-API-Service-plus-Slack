@@ -34,6 +34,12 @@ class SlackDeleteFromBalance(Resource):
 def process_data(response_url, players_text):
 
     players_list = parse_player(players_text)
+
+    if "All" in players_list and len(players_list) == 1:
+        player_status = delete_all_from_balance()
+        post_slack_data(response_url, "All Players Removed from balance list", "-")
+        return
+
     player_status = process_players(players_list)
     positive_result, player_names = process_output(player_status)
     player_names = ", ".join(player_names)
@@ -44,6 +50,14 @@ def process_data(response_url, players_text):
         post_slack_data(
             response_url, "Following players don't exist in balance list", player_names
         )
+
+
+def delete_all_from_balance():
+
+    mutex.acquire()
+    player_status = config.obj.delete_all_from_balance()
+    mutex.release()
+    return player_status
 
 
 def process_players(players_list):

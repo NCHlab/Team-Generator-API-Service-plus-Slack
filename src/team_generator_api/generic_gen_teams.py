@@ -232,6 +232,16 @@ class App:
 
         return response
 
+    def delete_all_from_balance(self):
+
+        data = json_local_load()
+        data["balance"] = []
+        json_local_write(data)
+        self.refresh_all_data(data)
+
+        response = {"status": "ok", "message": "All Players deleted from balance"}
+        return response
+
 
 class Person:
     def __init__(self, name):

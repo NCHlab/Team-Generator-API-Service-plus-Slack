@@ -123,13 +123,13 @@ For this example the `/teams` command as seen above was used along with the foll
 
 These commands correspond to the following endpoints (setup your own command to these endpoints) :
 
-| Slash Command          | Endpoint          | Type |
-| ---------------------- | ----------------- | ---- |
-| /teams                 | `/mainmodal`      | POST |
-| /tmg_add               | `/slack/add`      | POST |
-| /tmg_delete            | `/slack/delete`   | POST |
-| /tmg_addtobalance      | `/slack/add_b`    | POST |
-| /tmg_deletefrombalance | `/slack/delete_b` | POST |
+| Slash Command          | Endpoint          | Type | Usage                              |
+| ---------------------- | ----------------- | ---- | ---------------------------------- |
+| /teams                 | `/mainmodal`      | POST | N/A                                |
+| /tmg_add               | `/slack/add`      | POST | `John.Smith, Bruce.Wayne`          |
+| /tmg_delete            | `/slack/delete`   | POST | `John.Smith, Bruce.Wayne`          |
+| /tmg_addtobalance      | `/slack/add_b`    | POST | `John.Smith, Bruce.Wayne`          |
+| /tmg_deletefrombalance | `/slack/delete_b` | POST | `All` OR `John.Smith, Bruce.Wayne` |
 
 The last 4 commands are sent as type `ephemeral`, therefore they are only visible to the person who ran the command and is removed upon reload.
 
