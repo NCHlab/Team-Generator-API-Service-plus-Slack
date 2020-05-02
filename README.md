@@ -131,6 +131,6 @@ These commands correspond to the following endpoints (setup your own command to 
 | /tmg_addtobalance      | `/slack/add_b`    | POST | `John.Smith, Bruce.Wayne`          |
 | /tmg_deletefrombalance | `/slack/delete_b` | POST | `All` OR `John.Smith, Bruce.Wayne` |
 
-The last 4 commands are sent as type `ephemeral`, therefore they are only visible to the person who ran the command and is removed upon reload.
+The last 4 commands are sent as response type `ephemeral`, therefore they are only visible to the person who ran the command and is removed upon reload.
 
 <img src="./images/slack_chat_ex2.png" alt="Image Of Slack Chat">
